@@ -13,6 +13,7 @@ var extractZipAsync = Promise.promisify(require("extract-zip"));
 var util = require("util");
 var dotty = require("dotty");
 var promiseWhile = require("promise-while-loop");
+var WebSocket = require("ws");
 
 var Firebase = require('firebase');
 var path = require('path');
@@ -32,6 +33,7 @@ var createSlugGenerator = require("./util/generate-slug");
 var createItemSlugGenerator = require("./util/get-item-slug");
 var createRequestVerifier = require("./util/verify-signed-request");
 var createTokenVerifier = require("./util/verify-firebase-token");
+var createManifestDiffer = require("./util/diff-manifest");
 var isPublished = require("./util/is-published");
 var formatCustomUrl = require("./util/format-custom-url");
 var defaultValue = require("./util/default-value");
@@ -884,7 +886,70 @@ function createEnvironment(environmentOptions) {
         });
       });
     }
+    
+    function deploy() {
+      return new Promise(function(resolve, reject) {
+        var diffManifest = createManifestDiffer(buildPath(""));
 
+        var socket = new WebSocket("ws://" + localConfig.deployment.server, {
+          headers: {
+            "x-connection-key": localConfig.deployment.connectionKey
+          }
+        });
+
+        socket.on("open", function() {
+          function sendMessage(message) {
+            socket.send(JSON.stringify(message));
+          }
+
+          socket.on("message", function(data) {
+            var message = JSON.parse(data);
+
+            switch(message.messageType) {
+              case "hello":
+                sendMessage({
+                  messageType: "getManifest",
+                  site: environmentOptions.siteName
+                });
+                break;
+              case "manifest":
+                var differ = diffManifest(message.manifest);
+
+                differ.on("create", function(data) {
+                  extend(data, {
+                    messageType: "store",
+                    site: environmentOptions.siteName
+                  });
+                  sendMessage(data);
+                });
+
+                differ.on("update", function(data) {
+                  extend(data, {
+                    messageType: "store",
+                    site: environmentOptions.siteName
+                  });
+                  sendMessage(data);
+                });
+
+                differ.on("delete", function(data) {
+                  extend(data, {
+                    messageType: "delete",
+                    site: environmentOptions.siteName
+                  });
+                  sendMessage(data);
+                });
+
+                differ.on("end", function() {
+                  socket.close();
+                  resolve();
+                })
+                break;
+            }
+          });
+        });
+      });
+    }
+    
     function cleanStaticBuild() {
       return Promise.try(function() {
         logger.ok('Cleaning static build...');
@@ -925,8 +990,12 @@ function createEnvironment(environmentOptions) {
             return renderPages();
           }).then(function() {
             return closeSearchEntryStream();
-          }).tap(function() {
+          }).then(function() {
             logger.ok("Build completed!");
+            logger.ok("Starting deployment...");
+            return deploy();
+          }).tap(function() {
+            logger.ok("Deployment completed!");
           });
           // REFACT: LiveReload
         } else {

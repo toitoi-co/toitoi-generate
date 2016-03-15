@@ -2,5 +2,9 @@
   "firebaseName": "foobar",
   "firebaseKey": "<firebase secret key goes here>",
   "embedlyKey": "<embed.ly secret key goes here>",
-  "webhookServer": "127.0.0.1"
+  "webhookServer": "127.0.0.1",
+  "deployment": {
+    "server": "127.0.0.1:6000",
+    "connectionKey": "<long secret key goes here>"
+  }
 }
