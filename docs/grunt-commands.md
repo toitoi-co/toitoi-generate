@@ -1,4 +1,4 @@
-Message should now be serialized JSON, instead of a colon-delimited string.
+Message should now be serialized JSON, instead of a colon-delimited string. The WebSocket endpoint has moved from `/` to `/ws`.
 
 Responses will be JSON. For all commands, a response with a `messageType` of `"message"` may be returned - these originate from the templater, and can't currently be tied to a particular operation.
 
@@ -60,3 +60,15 @@ Still technically exists, but not currently in use.
 Responses:
 
 * `{messageType: "done", presetData: "$presetData"}`
+
+## imageToken
+
+* __New:__ `{site: "$site", token: "$token", messageType: "imageToken", "expiry": "$expiry"}`
+
+Returns a new 'viewing token' for images for a given site. These tokens expire after the given `expiry`, and are used to prevent people from accidentally leaking access to their (unpublished) images.
+
+The `expiry` value must be formatted according to what [`ms`](https://www.npmjs.com/package/ms) supports. An advisable value would be something like `5m`.
+
+Responses:
+
+* `{messageType: "done", imageToken: "$imageToken"}`
