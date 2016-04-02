@@ -3,6 +3,7 @@
   "firebaseKey": "<firebase secret key goes here>",
   "embedlyKey": "<embed.ly secret key goes here>",
   "webhookServer": "127.0.0.1",
+  "corsOrigin": "http://example.com",
   "deployment": {
     "server": "127.0.0.1:6000",
     "connectionKey": "<long secret key goes here>"

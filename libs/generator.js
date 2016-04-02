@@ -1187,6 +1187,10 @@ router.put("/images/:sitename/:filename", firebaseTokenAuth, function(req, res) 
   });
 });
 
+app.use(cors({
+  origin: localConfig.corsOrigin
+}));
+
 app.use("/", router);
 
 app.use(function(err, req, res, next) {
