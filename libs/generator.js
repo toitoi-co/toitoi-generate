@@ -147,6 +147,7 @@ function getEnvironment(siteName) { // REFACT: Memoize?
       return environments[siteName];
     } else {
       return Promise.try(function() {
+        console.log("management/sites/" + escapeKey(siteName));
         getFirebaseValueAsync(firebaseRoot.child("management/sites/" + escapeKey(siteName)));
       }).then(function(siteData) {
         console.log(siteData);
