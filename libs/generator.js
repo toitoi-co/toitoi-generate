@@ -147,8 +147,10 @@ function getEnvironment(siteName) { // REFACT: Memoize?
       return environments[siteName];
     } else {
       return Promise.try(function() {
-        getFirebaseValueAsync(firebaseRoot.child("management/sites/" + escapeKey(siteName) + "/key"));
-      }).then(function(secretKey) {
+        getFirebaseValueAsync(firebaseRoot.child("management/sites/" + escapeKey(siteName)));
+      }).then(function(siteData) {
+        console.log(siteData);
+        var secretKey = siteData.key;
         logger.ok("Secret key for " + siteName + " according to Firebase: " + secretKey);
         //secretKey = "somebucketsecretkey"; // REFACT: Override because of issues with getting it from Firebase. To fix...
         return createEnvironment({
