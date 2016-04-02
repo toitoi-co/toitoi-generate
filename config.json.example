@@ -10,5 +10,9 @@
   "resize": {
     "server": "127.0.0.1:6001",
     "connectionKey": "<long secret key goes here>"
+  },
+  "listen": {
+    "host": "127.0.0.1",
+    "port": 6557
   }
 }

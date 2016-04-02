@@ -61,8 +61,6 @@ require('colors');
 
 temp.track(); // Automatically cleans up temporary directories.
 
-var cmsSocketPort = 6557;
-
 var debugMode = (process.env.NODE_DEBUG != null && /(^|,)generate($|,)/.test(process.env.NODE_DEBUG))
 
 var loggerPrefix = "[x] ";
@@ -528,7 +526,7 @@ function createEnvironment(environmentOptions) {
 
         extend(locals, swigFunctions.getFunctions(), {
           firebase_conf: environmentOptions.webhookConfig,
-          cmsSocketPort: cmsSocketPort,
+          cmsSocketPort: localConfig.listen.port,
           production: environmentOptions.production
         });
 
@@ -1023,9 +1021,15 @@ function createEnvironment(environmentOptions) {
                 });
 
                 differ.on("end", function() {
-                  socket.close();
-                  resolve();
+                  sendMessage({
+                    messageType: "createSite",
+                    site: environmentOptions.siteName
+                  });
                 })
+                break;
+              case "siteCreated":
+                socket.close();
+                resolve();
                 break;
             }
           });
@@ -1327,6 +1331,6 @@ app.ws("/ws", function(sock, req) {
   });
 })
 
-app.listen(cmsSocketPort, '0.0.0.0', function() {
+app.listen(localConfig.listen.port, localConfig.listen.host, function() {
   logger.ok("API + WebSocket server listening...");
 });
