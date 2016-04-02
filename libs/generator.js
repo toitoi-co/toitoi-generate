@@ -33,6 +33,7 @@ var createItemSlugGenerator = require("./util/get-item-slug");
 var createRequestVerifier = require("./util/auth/verify-signed-request");
 var createFirebaseTokenVerifier = require("./util/auth/verify-firebase-token");
 var createViewTokenVerifier = require("./util/auth/verify-view-token");
+var createViewTokenGenerator = require("./util/auth/generate-view-token");
 var createManifestDiffer = require("./util/diff-manifest");
 var createFirebaseTokenMiddleware = require("./middleware/firebase-token-auth");
 var createViewTokenMiddleware = require("./middleware/view-token-auth");
@@ -132,7 +133,8 @@ var authPromise = firebaseRoot.authWithCustomToken(firebaseToken);
 
 var verifySignedRequest = createRequestVerifier(localConfig.firebaseKey);
 var verifyFirebaseToken = createFirebaseTokenVerifier(firebaseRoot, localConfig.firebaseKey);
-var verifyViewToken = createViewTokenVerifier(firebaseRoot, localConfig.firebaseKey);
+var verifyViewToken = createViewTokenVerifier(localConfig.firebaseKey);
+var generateViewToken = createViewTokenGenerator(localConfig.firebaseKey, localConfig.imageToken.expiry);
 
 var viewTokenAuth = createViewTokenMiddleware(verifyViewToken);
 var firebaseTokenAuth = createFirebaseTokenMiddleware(verifyFirebaseToken);
@@ -1118,6 +1120,7 @@ router.get("/images/:sitename", firebaseTokenAuth, function(req, res) {
   logger.debug("Listing images for " + req.params.sitename);
 
   return Promise.try(function() {
+    // FIXME: Move this to a .param middleware
     return getEnvironment(req.params.sitename);
   }).then(function(environment) {
     return getFirebaseValueAsync(environment.bucketRef().child("images"));
@@ -1126,13 +1129,18 @@ router.get("/images/:sitename", firebaseTokenAuth, function(req, res) {
   });
 });
 
-router.get("/images/:sitename/:filename", viewTokenAuth, function(req, res) {
+function createFileServer(basePath) {
+  return function(req, res) {
+    return Promise.try(function() {
+      return getEnvironment(req.params.sitename);
+    }).then(function(environment) {
+      res.sendFile(environment.path(path.join(basePath, req.params.filename)));
+    });
+  }
+}
 
-});
-
-router.get("/thumbnails/:sitename/:filname", viewTokenAuth, function(req, res) {
-
-});
+router.get("/images/:sitename/:filename", viewTokenAuth, createFileServer("static/images"));
+router.get("/thumbnails/:sitename/:filename", viewTokenAuth, createFileServer("static/thumbnails"));
 
 router.put("/images/:sitename/:filename", firebaseTokenAuth, function(req, res) {
   logger.debug("Uploading image for " + req.params.sitename);
@@ -1197,6 +1205,11 @@ app.use("/", router);
 app.use(function(err, req, res, next) {
   // FIXME: In development mode only
   var statusCode;
+
+  // FIXME: Figure out a way to do this for specific routes; sendFile will not let us .catch these...
+  if (err.code === "ENOENT") {
+    err = new errors.NotFoundError("No such image exists.");
+  }
 
   if (err.statusCode != null) {
     statusCode = err.statusCode;
@@ -1314,6 +1327,17 @@ app.ws("/ws", function(sock, req) {
                 throw new Error("Must specify either `url` or `data`.")
               }
             });
+            break;
+          case "imageToken":
+            return Promise.try(function() {
+              return verifyFirebaseToken(message.token, message.site);
+            }).then(function() {
+              return generateViewToken(message.site);
+            }).then(function(token) {
+              return {
+                imageToken: token
+              };
+            })
             break;
           default:
             throw new Error("No such `messageType` exists.")

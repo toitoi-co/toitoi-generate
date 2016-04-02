@@ -7,6 +7,7 @@ module.exports = function(verifier) {
       if (req.query.token == null) {
         throw new errors.TokenError("No authentication token was specified.") // FIXME: error type
       } else {
+        console.log("TOKEN", req.query.token);
         return verifier(req.query.token, req.params.sitename);
       }
     }).then(function() {
