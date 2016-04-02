@@ -14,31 +14,48 @@ var util = require("util");
 var dotty = require("dotty");
 var promiseWhile = require("promise-while-loop");
 var WebSocket = require("ws");
+var gm = require("gm");
+
+var express = require("express");
+var expressWs = require("@joepie91/express-ws");
+var expressPromiseRouter = require("express-promise-router");
 
 var Firebase = require('firebase');
 var path = require('path');
 var fs = Promise.promisifyAll(require('fs-extra'));
 var glob = require('glob');
-var websocketServer = require('nodejs-websocket');
 var cheerio = require('cheerio');
 var swig = require('swig');
 
+var createSlugGenerator = require("./util/generate-slug");
+var createItemSlugGenerator = require("./util/get-item-slug");
+var createRequestVerifier = require("./util/auth/verify-signed-request");
+var createFirebaseTokenVerifier = require("./util/auth/verify-firebase-token");
+var createViewTokenVerifier = require("./util/auth/verify-view-token");
+var createManifestDiffer = require("./util/diff-manifest");
+var createFirebaseTokenMiddleware = require("./middleware/firebase-token-auth");
+var createViewTokenMiddleware = require("./middleware/view-token-auth");
+
+var errors = require("./util/errors");
+
+var concatStreamAsync = require("./util/concat-stream-async");
+var createReadStreamAsync = require("./util/create-read-stream-async");
+var createWriteStreamAsync = require("./util/create-write-stream-async");
 var streamClosedAsync = require("./util/stream-closed-async");
 var streamEndedAsync = require("./util/stream-ended-async");
 var getFirebaseValueAsync = require("./util/get-firebase-value-async");
 var escapeKey = require("./util/escape-key");
 var npmWrapper = require("./util/npm-wrapper");
 var isNotDirectory = require("./util/is-not-directory");
-var createSlugGenerator = require("./util/generate-slug");
-var createItemSlugGenerator = require("./util/get-item-slug");
-var createRequestVerifier = require("./util/verify-signed-request");
-var createTokenVerifier = require("./util/verify-firebase-token");
-var createManifestDiffer = require("./util/diff-manifest");
 var isPublished = require("./util/is-published");
 var formatCustomUrl = require("./util/format-custom-url");
 var defaultValue = require("./util/default-value");
+var suffixBasename = require("./util/suffix-basename");
+var generateThumbnailSuffix = require("./util/generate-thumbnail-suffix");
+var getImageMetadata = require("./util/get-image-metadata")
 
 var globAsync = Promise.promisify(glob);
+Promise.promisifyAll(gm.prototype);
 
 require('colors');
 
@@ -115,7 +132,11 @@ var firebaseRoot = new Firebase("https://" + localConfig.firebaseName + ".fireba
 var authPromise = firebaseRoot.authWithCustomToken(firebaseToken);
 
 var verifySignedRequest = createRequestVerifier(localConfig.firebaseKey);
-var verifyFirebaseToken = createTokenVerifier(firebaseRoot, localConfig.firebaseKey);
+var verifyFirebaseToken = createFirebaseTokenVerifier(firebaseRoot, localConfig.firebaseKey);
+var verifyViewToken = createViewTokenVerifier(firebaseRoot, localConfig.firebaseKey);
+
+var viewTokenAuth = createViewTokenMiddleware(verifyViewToken);
+var firebaseTokenAuth = createFirebaseTokenMiddleware(verifyFirebaseToken);
 
 var environments = {};
 
@@ -189,6 +210,62 @@ function createEnvironment(environmentOptions) {
       return doBuild(task);
     });
 
+    queue.define("resize", function(task) {
+      // task:
+      //   * type: "resize" / "crop"
+      //   * source: filename
+      //   * size: {width, height}
+
+      var thumbnailBasename = suffixBasename(task.source, generateThumbnailSuffix(task));
+      var thumbnailPath = environmentPath(path.join("static/thumbnails", thumbnailBasename));
+      var sourcePath = environmentPath(path.join("static/images", task.source));
+
+      return Promise.try(function() {
+        // Code smell, but probably the only way to do this without wasting resources...
+        return fs.statAsync(thumbnailPath);
+      }).then(function(stat) {
+        // The resized image already exists.
+        logger.debug("Image " + task.source + " already exists, skipping resize task...");
+        return;
+      }).catch({code: "ENOENT"}, function(err) {
+        logger.debug("Resizing " + task.source + "...");
+        return Promise.try(function() {
+          return Promise.all([
+            createReadStreamAsync(sourcePath),
+            fs.mkdirsAsync(environmentPath("static/thumbnails"))
+          ]);
+        }).spread(function(sourceStream, _unused) {
+          var resizeHost = "http://" + localConfig.resize.server; // FIXME: TLS
+          var endpoint = urlJoin(resizeHost, task.type);
+
+          return bhttp.post(endpoint, {
+            image: sourceStream,
+            width: task.size.width.toString(),
+            height: task.size.height.toString()
+          }, {
+            stream: true,
+            headers: {
+              "x-connection-key": localConfig.resize.connectionKey
+            }
+          });
+        }).then(function(response) {
+          if (response.statusCode === 200) {
+            // FIXME: Potential race condition.
+            logger.debug("Saving resized image to " + thumbnailPath + "...");
+            response.pipe(fs.createWriteStream(thumbnailPath));
+            return streamEndedAsync(response);
+          } else {
+            // FIXME: Proper error types.
+            return Promise.try(function() {
+              return concatStreamAsync(response);
+            }).then(function(errorBody) {
+              throw new Error(errorBody);
+            });
+          }
+        })
+      })
+    })
+
     var swigInstance = new swig.Swig({
       loader: swig.loaders.fs(environmentPath("")),
       cache: false // FIXME: 'memory' for production?
@@ -202,10 +279,15 @@ function createEnvironment(environmentOptions) {
       return buildPath(path.join(targetPath, "index.html"));
     }
 
-    var swigFunctions = new require('./swig_functions').swigFunctions();
+    var swigFunctions = new require('./swig_functions').swigFunctions({
+      queue: queue
+    });
+
     var swigFilters = require('./swig_filters');
     var swigTags = require('./swig_tags');
-    swigFilters.init(swigInstance); // Doesn't keep around any globals
+    swigFilters.init(swigInstance, {
+      queue: queue
+    }); // Doesn't keep around any globals
     swigTags.init(swigInstance); // Doesn't do anything yet
 
     /**
@@ -891,6 +973,7 @@ function createEnvironment(environmentOptions) {
       return new Promise(function(resolve, reject) {
         var diffManifest = createManifestDiffer(buildPath(""));
 
+        // FIXME: Handle error when deployment server isn't running.
         var socket = new WebSocket("ws://" + localConfig.deployment.server, {
           headers: {
             "x-connection-key": localConfig.deployment.connectionKey
@@ -985,6 +1068,10 @@ function createEnvironment(environmentOptions) {
           }).then(function() {
             return renderTemplates();
           }).then(function() {
+            // Ensure that all resizing tasks have completed, before we copy the static files.
+            logger.ok("Waiting for image resizing tasks to complete...");
+            return queue.awaitDrained("resize");
+          }).then(function() {
             return copyStatic();
           }).then(function() {
             return renderPages();
@@ -1008,12 +1095,114 @@ function createEnvironment(environmentOptions) {
       getTypeData: getTypeData,
       queue: queue,
       installRemotePreset: installRemotePreset,
-      installLocalPreset: installLocalPreset
+      installLocalPreset: installLocalPreset,
+      path: environmentPath,
+      queue: queue,
+      bucketRef: getBucketRef
     }
   });
 }
 
-var server = new websocketServer.createServer(function(sock) {
+var app = express();
+expressWs(app);
+
+var router = expressPromiseRouter();
+
+// FIXME: apiRouter
+router.get("/images/:sitename", firebaseTokenAuth, function(req, res) {
+  logger.debug("Listing images for " + req.params.sitename);
+
+  return Promise.try(function() {
+    return getEnvironment(req.params.sitename);
+  }).then(function(environment) {
+    return getFirebaseValueAsync(environment.bucketRef().child("images"));
+  }).then(function(images) {
+    res.send(images);
+  });
+});
+
+router.get("/images/:sitename/:filename", viewTokenAuth, function(req, res) {
+
+});
+
+router.get("/thumbnails/:sitename/:filname", viewTokenAuth, function(req, res) {
+
+});
+
+router.put("/images/:sitename/:filename", firebaseTokenAuth, function(req, res) {
+  logger.debug("Uploading image for " + req.params.sitename);
+
+  return Promise.try(function() {
+    return getEnvironment(req.params.sitename);
+  }).then(function(environment) {
+    var targetPath = environment.path(path.join("static/images", req.params.filename));
+
+    var thumbnailTask = {
+      type: "crop",
+      source: req.params.filename,
+      size: {
+        width: 200,
+        height: 200
+      }
+    }
+
+    return Promise.try(function() {
+      return fs.mkdirsAsync(environment.path("static/images"));
+    }).then(function() {
+      return createWriteStreamAsync(targetPath, {
+        flags: "wx"
+      });
+    }).then(function(targetStream) {
+      req.pipe(targetStream);
+      return streamEndedAsync(req);
+    }).then(function() {
+      return getImageMetadata(targetPath);
+    }).then(function(metadata) {
+      var imageObject = {
+        url: "/images/" + req.params.sitename + "/" + req.params.filename,
+        thumbnailUrl: "/images/" + req.params.sitename + "/" + suffixBasename(req.params.filename, generateThumbnailSuffix(thumbnailTask)),
+        filename: req.params.filename,
+        siteUrl: "/images/" + req.params.filename,
+        fileSize: metadata.filesize,
+        width: metadata.width,
+        height: metadata.height,
+        thumbnails: [],
+        croppedThumbnails: []
+      }
+
+      return Promise.try(function() {
+        return environment.bucketRef().child("images").push(imageObject);
+      }).then(function() {
+        return environment.queue.push("resize", thumbnailTask);
+      }).then(function() {
+        res.status(201).json(imageObject);
+      });
+    }).catch({code: "EEXIST"}, function(err) {
+      throw new errors.ConflictError("The specified file already exists.");
+    });
+  });
+});
+
+app.use("/", router);
+
+app.use(function(err, req, res, next) {
+  // FIXME: In development mode only
+  var statusCode;
+
+  if (err.statusCode != null) {
+    statusCode = err.statusCode;
+  } else {
+    statusCode = 500;
+  }
+
+  res.status(statusCode).json({
+    error: err.stack
+  });
+
+  console.log(err.stack);
+});
+
+app.ws("/ws", function(sock, req) {
   logger.ok('Client connected!');
   
   var connectionAlive = true;
@@ -1025,7 +1214,7 @@ var server = new websocketServer.createServer(function(sock) {
 
   function sendMessage(data) {
     if (connectionAlive) {
-      sock.sendText(JSON.stringify(data))
+      sock.send(JSON.stringify(data))
     }
   }
 
@@ -1052,7 +1241,7 @@ var server = new websocketServer.createServer(function(sock) {
     // FIXME: This should probably do something?
   })
 
-  sock.on('text', function(string) {
+  sock.on('message', function(string) {
     Promise.try(function() {
       var message = JSON.parse(string);
       
@@ -1136,6 +1325,8 @@ var server = new websocketServer.createServer(function(sock) {
       sendError(null, err);
     });
   });
-}).listen(cmsSocketPort, '0.0.0.0', function() {
-  logger.ok("WebSocket server listening...");
+})
+
+app.listen(cmsSocketPort, '0.0.0.0', function() {
+  logger.ok("API + WebSocket server listening...");
 });

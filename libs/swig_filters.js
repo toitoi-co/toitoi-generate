@@ -21,7 +21,7 @@ if (typeof String.prototype.endsWith != 'function') {
  * Defines a set of filters available in swig templates
  * @param  {Object}   swig        Swig engine to add filters to
  */
-module.exports.init = function (swig) {
+module.exports.init = function (swig, options) {
 
   var siteDns = '';
   var firebaseConf = {};
@@ -165,6 +165,22 @@ module.exports.init = function (swig) {
     return source;
   };
 
+  function resizeOnServer(source, type, size) {
+    // We can ignore the return Promise here; the build pipeline will take care of this, and wait for the queue to drain.
+
+    var task = {
+      type: type,
+      source: source,
+      size: size
+    }
+
+    options.queue.push("resize", task);
+
+    // The URL follows a predictable format, so we can specify that already.
+    var suffixedBasename = suffixBasename(source, generateThumbnailSuffix(task));
+    return urlJoin("/static/thumbnails", suffixedBasename);
+  }
+
   var imageSize = function(input, size, deprecatedHeight, deprecatedGrow) {
 
     if(!input) {
@@ -174,6 +190,13 @@ module.exports.init = function (swig) {
     var imageSource = '';
 
     if(typeof input === 'object') {
+
+      if (input.resize_path != null) {
+        return resizeOnServer(input.resize_path, "resize", {
+          width: size,
+          height: deprecatedHeight
+        });
+      }
 
       if(!size) {
         return input.url;
@@ -231,6 +254,13 @@ module.exports.init = function (swig) {
     var imageSource = '';
 
     if(typeof input === 'object') {
+
+      if (input.resize_path != null) {
+        return resizeOnServer(input.resize_path, "crop", {
+          width: size,
+          height: deprecatedHeight
+        });
+      }
 
       if(!size) {
         return input.url;

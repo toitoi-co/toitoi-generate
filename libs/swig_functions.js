@@ -5,11 +5,7 @@ var _ = require('lodash');
 
 var slugger = require('uslug');
 
-/**
- * Defines a set of functions usable in all swig templates, are merged into context on render
- * @param  {Object}   swig        Swig engine
- */
-module.exports.swigFunctions = function(swig) {
+module.exports.swigFunctions = function(options) {
 
   var self = this;
 

@@ -6,5 +6,9 @@
   "deployment": {
     "server": "127.0.0.1:6000",
     "connectionKey": "<long secret key goes here>"
+  },
+  "resize": {
+    "server": "127.0.0.1:6001",
+    "connectionKey": "<long secret key goes here>"
   }
 }

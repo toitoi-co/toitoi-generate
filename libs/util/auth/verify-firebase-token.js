@@ -1,7 +1,8 @@
 var Promise = require("bluebird");
 var jwt = require("jsonwebtoken-promisified");
-var getFirebaseValueAsync = require("./get-firebase-value-async");
-var escapeKey = require("./escape-key");
+var getFirebaseValueAsync = require("../get-firebase-value-async");
+var escapeKey = require("../escape-key");
+var errors = require("../errors");
 
 module.exports = function(firebase, firebaseSecret) {
 	return function(token, site) {
@@ -15,9 +16,9 @@ module.exports = function(firebase, firebaseSecret) {
 			var ownerList = Object.keys(owners).map(function(key) {
 				return owners[key];
 			});
-			
+
 			if (ownerList.indexOf(decodedToken.d.email) === -1) {
-				throw new Error("Invalid token.");
+				throw new errors.TokenError("Invalid token.");
 			}
 		})
 	}

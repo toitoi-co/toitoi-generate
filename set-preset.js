@@ -2,7 +2,7 @@
 
 var WebSocket = require("ws");
 
-var wsEndpoint = "ws://localhost:6557/";
+var wsEndpoint = "ws://localhost:6557/ws";
 
 var ws = new WebSocket(wsEndpoint);
  
