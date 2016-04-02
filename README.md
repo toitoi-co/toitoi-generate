@@ -1,3 +1,7 @@
+1. Install GraphicsMagick
+2. `npm install`
+3. `npm start`
+
 ## This is a Webhook powered website.
 
 This is the boilerplate readme installed whenever you create a [Webhook CMS](http://www.webhook.com) powered site. You should probably replace it with information specific to your site.
