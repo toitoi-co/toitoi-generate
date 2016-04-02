@@ -26,6 +26,7 @@ var fs = Promise.promisifyAll(require('fs-extra'));
 var glob = require('glob');
 var cheerio = require('cheerio');
 var swig = require('swig');
+var cors = require('cors');
 
 var createSlugGenerator = require("./util/generate-slug");
 var createItemSlugGenerator = require("./util/get-item-slug");
@@ -174,11 +175,11 @@ function createEnvironment(environmentOptions) {
     server: environmentOptions.webhookServer,
     custom: true
   }
-  
+
   function environmentPath(targetPath) {
     return path.join(__dirname, "../sites", environmentOptions.siteName, targetPath);
   }
-  
+
   var loggerPrefix = "[" + environmentOptions.siteName + "] ";
   var logger = logger || {
     ok: function(data) {
@@ -195,10 +196,10 @@ function createEnvironment(environmentOptions) {
     write: function() {},
     writeln: function() {}
   };
-  
+
   return Promise.try(function() {
     logger.ok('Creating new environment...');
-    
+
     return fs.mkdirsAsync(environmentPath(""))
   }).then(function() {
     var queue = taskQueue();
@@ -268,7 +269,7 @@ function createEnvironment(environmentOptions) {
       loader: swig.loaders.fs(environmentPath("")),
       cache: false // FIXME: 'memory' for production?
     });
-    
+
     function buildPath(targetPath) {
       return environmentPath(path.join(".build", targetPath));
     }
@@ -429,7 +430,7 @@ function createEnvironment(environmentOptions) {
 
     function writeSearchEntry(url, output) {
       return; // REFACT: Disabled because of issues with Cheerio...
-      
+
       if (environmentOptions.noSearch || searchEntryStream == null) {
         return;
       } else {
@@ -484,7 +485,7 @@ function createEnvironment(environmentOptions) {
 
     function tryRender(template, locals, options) {
       logger.ok('Rendering ' + template);
-      
+
       var renderedOutput;
 
       try {
@@ -509,17 +510,17 @@ function createEnvironment(environmentOptions) {
           }
         }
       }
-      
+
       return renderedOutput;
     }
 
     function writeTemplate(template, destination, url, locals, options) { // REFACT: Function name
       return Promise.try(function() {
-        
+
         if (locals == null) {
           locals = {};
         }
-        
+
         if (options == null) {
           options = {};
         }
@@ -531,7 +532,7 @@ function createEnvironment(environmentOptions) {
         });
 
         swigFunctions.init(); // State reset?
-        
+
         // REFACT: The following appears to have broken the build process...
         /*if (locals.item != null) {
           locals.item = locals._realGetItem(locals.item._type, locals.item._id, true); // FIXME: This is messy... what is it for?
@@ -649,7 +650,7 @@ function createEnvironment(environmentOptions) {
         }
       });
     }
-    
+
     function extractGitHubZip(source, destination) {
       return Promise.try(function() {
         logger.debug("Creating temporary directory for preset unpacking");
@@ -671,7 +672,7 @@ function createEnvironment(environmentOptions) {
         })
       });
     }
-    
+
     function installPreset() {
       return Promise.try(function() {
         logger.ok('Installing preset...');
@@ -683,7 +684,7 @@ function createEnvironment(environmentOptions) {
         });
       }).then(function() {
         logger.debug("Unpacking preset");
-        
+
         return extractGitHubZip(environmentPath(".preset.zip"), environmentPath(""));
       }).then(function() {
         logger.debug("Importing dependencies");
@@ -730,7 +731,7 @@ function createEnvironment(environmentOptions) {
     function installLocalPreset(fileData) {
       return Promise.try(function() {
         logger.ok('Storing base64ed preset...');
-        
+
         return fs.writeFileAsync(environmentPath(".preset.zip"), fileData, {encoding: "base64"});
       }).then(function() {
         return installPreset();
@@ -768,7 +769,7 @@ function createEnvironment(environmentOptions) {
           var pathSegments, urlSegments, noIndex;
 
           var parsedPath = parseTemplatePath(templatePath);
-          
+
           var strippedDirectory = parsedPath.directory.replace(/^\/pages\/?/, "");
 
           if (parsedPath.isRaw) {
@@ -876,12 +877,12 @@ function createEnvironment(environmentOptions) {
               value: typeData[key]
             }
           });
-          
+
           items.forEach(function(item) {
             item.value._type = itemType;
             item.value._id = item.key;
           });
-          
+
           var categoryUrlSegments, itemUrlSegments;
 
           if (dotty.exists(typeInfo, "customUrls.listUrl")) {
@@ -914,7 +915,7 @@ function createEnvironment(environmentOptions) {
               }
 
               var publishedRender;
-              
+
               if (isPublished(item.value)) {
                 var itemSlug = getItemSlug(item.value);
                 var publishedUrl = itemUrlSegments.concat([itemSlug]).join("/");
@@ -954,11 +955,11 @@ function createEnvironment(environmentOptions) {
         logger.ok("Finished rendering templates");
       })
     }
-    
+
     function copyStatic() {
       return Promise.try(function() {
         logger.ok('Copying static...');
-        
+
         return fs.mkdirsAsync(buildPath("static"));
       }).then(function() {
         return fs.copyAsync(environmentPath("static"), buildPath("static"), {
@@ -966,7 +967,7 @@ function createEnvironment(environmentOptions) {
         });
       });
     }
-    
+
     function deploy() {
       return new Promise(function(resolve, reject) {
         var diffManifest = createManifestDiffer(buildPath(""));
@@ -1036,7 +1037,7 @@ function createEnvironment(environmentOptions) {
         });
       });
     }
-    
+
     function cleanStaticBuild() {
       return Promise.try(function() {
         logger.ok('Cleaning static build...');
@@ -1054,7 +1055,7 @@ function createEnvironment(environmentOptions) {
     function doBuild(task) {
       return Promise.try(function() {
         logger.ok('Build initiated!');
-        
+
         if (task.type === "static") {
           return Promise.try(function() {
             return cleanStaticBuild();
@@ -1094,7 +1095,7 @@ function createEnvironment(environmentOptions) {
         }
       })
     }
-    
+
     return {
       getTypeData: getTypeData,
       queue: queue,
@@ -1212,7 +1213,7 @@ app.use(function(err, req, res, next) {
 
 app.ws("/ws", function(sock, req) {
   logger.ok('Client connected!');
-  
+
   var connectionAlive = true;
 
   sock.on('close', function() {
@@ -1252,7 +1253,7 @@ app.ws("/ws", function(sock, req) {
   sock.on('message', function(string) {
     Promise.try(function() {
       var message = JSON.parse(string);
-      
+
       return Promise.try(function() {
         return authPromise;
       }).then(function() {
