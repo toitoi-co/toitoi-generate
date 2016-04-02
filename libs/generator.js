@@ -147,9 +147,10 @@ function getEnvironment(siteName) { // REFACT: Memoize?
       return environments[siteName];
     } else {
       return Promise.try(function() {
-        getFirebaseValueAsync(firebaseRoot.child("management/sites/" + escapeKey(siteName) + "/key"))
+        getFirebaseValueAsync(firebaseRoot.child("management/sites/" + escapeKey(siteName) + "/key"));
       }).then(function(secretKey) {
-        secretKey = "somebucketsecretkey"; // REFACT: Override because of issues with getting it from Firebase. To fix...
+        log.ok("Secret key for " + siteName + " according to Firebase: " + secretKey);
+        //secretKey = "somebucketsecretkey"; // REFACT: Override because of issues with getting it from Firebase. To fix...
         return createEnvironment({
           strictMode: true,
           siteName: siteName,
