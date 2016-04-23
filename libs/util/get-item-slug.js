@@ -7,7 +7,10 @@ module.exports = function(slugGenerator) {
     
     if (item.slug != null) {
       itemSlug = item.slug;
+    } else if (item._type != null) {
+      itemSlug = item._type + "/" + slugGenerator(item);
     } else {
+      // FIXME: This is probably an error/bug?
       itemSlug = slugGenerator(item);
     }
     
