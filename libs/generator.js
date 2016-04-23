@@ -305,7 +305,7 @@ function createEnvironment(environmentOptions) {
 
     function getTypeData(type) {
       return Promise.try(function() {
-        return getFirebaseValueAsync(getBucketRef().child(type))
+        return getFirebaseValueAsync(getBucketRef().child("contentType").child(type))
       });
     }
 
