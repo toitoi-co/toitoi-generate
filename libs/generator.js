@@ -1174,7 +1174,7 @@ router.put("/images/:sitename/:filename", firebaseTokenAuth, function(req, res) 
     }).then(function(metadata) {
       var imageObject = {
         url: "/images/" + req.params.sitename + "/" + req.params.filename,
-        thumbnailUrl: "/images/" + req.params.sitename + "/" + suffixBasename(req.params.filename, generateThumbnailSuffix(thumbnailTask)),
+        thumbnailUrl: "/thumbnails/" + req.params.sitename + "/" + suffixBasename(req.params.filename, generateThumbnailSuffix(thumbnailTask)),
         filename: req.params.filename,
         siteUrl: "/images/" + req.params.filename,
         fileSize: metadata.filesize,
