@@ -5,6 +5,10 @@ var utils = require('./utils.js');
 var marked = require('marked');
 var dateFormatter = require('./dateformatter.js');
 
+var urlJoin = require("url-join");
+var suffixBasename = require("./util/suffix-basename");
+var generateThumbnailSuffix = require("./util/generate-thumbnail-suffix");
+
 if (typeof String.prototype.startsWith != 'function') {
   String.prototype.startsWith = function (str){
     return this.indexOf(str) == 0;

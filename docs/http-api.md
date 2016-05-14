@@ -48,3 +48,7 @@ Returns a `409` HTTP response code if the image already exists.
 ### GET /thumbnails/:site/:filename?token=:token
 
 Responds with the specified image. The `token` must be obtained through the `imageToken` WebSocket call.
+
+### GET /preview/:site/:previewKey/...
+
+Responds with a fully browsable preview build. The `previewKey` is obtained from the response to the `build` command, and changes for every preview build.

@@ -22,14 +22,33 @@ Responses:
 
 * `{messageType: "done", slug: "$slug"}`
 
-## build
+## publish
 
-* __Old:__ `build`
-* __New:__ `{site: "$site", token: "$token", messageType: "build"}`
+* __New:__ `{site: "$site", token: "$token", messageType: "publish"}`
+
+Sets the current `previewData` as the published `data`. This will only copy over the data and __not__ build the site - for that, you will need to call `build` separately.
 
 Responses:
 
 * `{messageType: "done"}`
+* `{messageType: "error", message: "jwt must be provided"}`
+* `{messageType: "error", message: "jwt malformed"}`
+* `{messageType: "error", message: "jwt expired"}`
+* `{messageType: "error", message: "invalid signature"}`
+
+## build
+
+* __Old:__ `build`
+* __New:__ `{site: "$site", token: "$token", messageType: "build", preview: "$preview"}`
+
+(Re)builds the site. `preview` is a boolean, indicating whether the site should be built in preview mode or not.
+
+When building a preview, a `previewKey` will be included in the response - this can be used to display the preview build to the user. See the HTTP API documentation of `-generate` for more details.
+
+Responses:
+
+* `{messageType: "done"}` (for public builds)
+* `{messageType: "done", previewKey: "$previewKey"}` (for preview builds)
 * `{messageType: "error", message: "jwt must be provided"}`
 * `{messageType: "error", message: "jwt malformed"}`
 * `{messageType: "error", message: "jwt expired"}`
