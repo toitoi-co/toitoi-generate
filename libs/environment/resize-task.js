@@ -10,10 +10,13 @@ var generateThumbnailSuffix = require("../util/generate-thumbnail-suffix");
 var createReadStreamAsync = require("../util/create-read-stream-async");
 var streamEndedAsync = require("../util/stream-ended-async");
 var concatStreamAsync = require("../util/concat-stream-async");
+var lockStore = require("../util/lock");
 
 module.exports = function(options) {
   var env = options.environment;
   var config = options.config;
+
+  var locks = lockStore();
 
   return function(task) {
     // task:
@@ -25,12 +28,20 @@ module.exports = function(options) {
     var thumbnailPath = env.environmentPath(path.join("static/thumbnails", thumbnailBasename));
     var sourcePath = env.environmentPath(path.join("static/images", task.source));
 
+    try {
+      locks.lock(thumbnailPath);
+    } catch (err) {
+      env.logger.debug("Resize for " + path.basename(thumbnailPath) + " already in progress, skipping resize task...");
+      return;
+    }
+
     return Promise.try(function() {
       // Code smell, but probably the only way to do this without wasting resources...
       return fs.statAsync(thumbnailPath);
     }).then(function(stat) {
       // The resized image already exists.
       env.logger.debug("Image " + path.basename(thumbnailPath) + " already exists, skipping resize task...");
+      locks.unlock(thumbnailPath);
       return;
     }).catch({code: "ENOENT"}, function(err) {
       env.logger.debug("Resizing " + task.source + "...");
@@ -75,7 +86,9 @@ module.exports = function(options) {
             throw new Error(errorBody);
           });
         }
-      })
+      }).then(function() {
+        locks.unlock(thumbnailPath);
+      });
     })
   }
 }
