@@ -13,6 +13,10 @@ module.exports = function(firebase, firebaseSecret) {
 			])
 			return ;
 		}).spread(function(owners, decodedToken) {
+			if (owners == null) {
+				throw new errors.TokenError("No such hostname exists.");
+			}
+
 			var ownerList = Object.keys(owners).map(function(key) {
 				return owners[key];
 			});
