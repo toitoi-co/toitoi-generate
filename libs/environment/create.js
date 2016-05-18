@@ -122,7 +122,7 @@ module.exports = function createEnvironment(environmentOptions) {
         } else {
           /* None of the presets used included a package.json - copy ours. */
           // REFACT: Is this actually necessary?
-          return fs.copyAsync(path.join(__dirname, "../package.json"), environmentPath("package.json"));
+          return fs.copyAsync(path.join(__dirname, "../../package.json"), environmentPath("package.json"));
         }
       });
     }
