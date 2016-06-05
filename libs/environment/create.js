@@ -414,7 +414,7 @@ module.exports = function createEnvironment(environmentOptions) {
       installLocalPreset: installLocalPreset,
       path: environmentPath,
       queue: queue,
-      bucketRef: bucketReference, // FIXME: bind?
+      bucketRef: bucketReference.bind(null, environmentOptions.siteName, environmentOptions.secretKey), // FIXME: bind?
       secretKey: environmentOptions.secretKey
     }
   });
