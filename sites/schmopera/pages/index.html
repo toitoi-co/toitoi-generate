@@ -1,0 +1,123 @@
+{# ------------------------------------------------------- #}
+{# PRIMARY INDEX PAGE: HOME                                #}
+{# ------------------------------------------------------- #}
+
+{% extends "templates/partials/base.html" %}
+{% block title %}{% parent %} / Home{% endblock %}
+{% block content %}{% spaceless %}
+
+{% set data = merge(cms.articles, cms.videos) %}
+{% set data = data|exclude('unlisted_home', true) %}
+{% set data = data|exclude('unlisted', true) %}
+{% set data = data|sort('publish_date', true) %}
+{% set data = paginate(data, 10) %}
+
+{% set featured = merge(cms.featured.home_articles, cms.featured.home_videos) %}
+
+  <section class="post--featured">
+    <nav class="nav--share">
+      <h3>Find us on</h3>
+      <a href="https://www.facebook.com/schmopera" class="social--facebook pill"><i class="icon-facebook"></i></a>
+      <a href="https://www.twitter.com/schmopera" class="social--twitter pill"><i class="icon-twitter"></i></a>
+    </nav>
+    <h2 class="pill">Featured</h2>
+    {% for item in featured %}
+      <a href="{{ url(item) }}" class="post--featured_item">
+        {% if loop.first %}
+          {% set srcset = item.primary_image|imageCrop(680, 340) + ", " + item.primary_image|imageCrop(1360, 680) + " 2x" %}
+          <picture>
+            <source srcset="{{ srcset }}" media="(min-width: 40em)">
+            <img src="{{ item.primary_image|imageCrop(680, 340) }}" alt="{{ item.name }}">
+          </picture>
+          {% else %}
+          {% set srcset = item.primary_image|imageCrop(340, 340) + ", " + item.primary_image|imageCrop(680, 680) + " 2x" %}
+          <picture>
+            <source srcset="{{ srcset }}" media="(min-width: 40em)">
+            <img src="{{ item.primary_image|imageCrop(300, 300) }}" alt="{{ item.name }}">
+          </picture>
+        {% endif %}
+
+        <h3><span>{{ item.name }}</span></h3>
+
+        <span class="post--meta">
+          {% if item.publish_date %}
+            <em class="post--meta_date">{{ item.publish_date|date('F d, Y') }}</em>
+          {% endif %}
+
+          {% if item.youtube_url %}
+            <em class="post--meta-type meta-type_video">Video</em>
+          {% endif %}
+        </span>
+      </a>
+    {% endfor %}
+  </section>
+
+  <h2 class="pill">Blog Roll</h2>
+  <ul class="post--list">
+    {% for item in data %}
+      <li>
+        <a href="{{ url(item)|replace('&', '&amp;', 'g') }}" class="post--list-title"><h1>{{ item.name }}</h1></a>
+        {% if item.primary_image %}
+        <a href="{{ url(item)|replace('&', '&amp;', 'g') }}" class="post--list-image">
+          {% set srcset = item.primary_image|imageCrop(680, 680) + ", " +  item.primary_image|imageCrop(1360, 1360) + " 2x" %}
+          <picture>
+            <source srcset="{{ srcset }}" media="(min-width: 40em)">
+            <img src="{{ item.primary_image|imageCrop(400, 400) }}" alt="{{ item.name }}">
+          </picture>
+          <span class="post--meta">
+            {% if item.publish_date %}
+            <em class="post--meta-date">{{ item.publish_date|date('F d, Y') }}</em>
+            {% endif %}
+
+            {% if item.authors %}
+            {% for author in item.authors %}
+            <em class="post--meta-author">{{ author.name }}</em>
+            {% endfor %}
+            {% endif %}
+
+            {% if item.youtube_url %}
+              <em class="post--meta-type meta-type_video">Video</em>
+            {% else %}
+              {% if item.category|size !== 0 %}
+              <em class="post--meta-category">{{ item.category.name }}</em>
+              {% endif %}
+            {% endif %}
+          </span>
+          {% if item.youtube_url %}
+            <i class="icon-play"></i>
+          {% endif %}
+        </a>
+        {% endif %}
+
+        {% if item.short_description %}
+        <p class="post--list-desc">{{ item.short_description }}</p>
+        {% endif %}
+
+        {% if item.youtube_url %}
+          <a href="{{ url(item)|replace('&', '&amp;', 'g') }}" class="btn post--button">Watch Video</a>
+        {% else %}
+          <a href="{{ url(item)|replace('&', '&amp;', 'g') }}" class="btn post--button">Read More</a>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+
+  {% include "templates/partials/paginator.html" %}
+
+{# --- Comment count for future use -----------------------------------
+
+  <em class="post--meta-comments"><i class="icon-chat"></i><span class="disqus-comment-count" data-disqus-url="{{ site_url }}{{ url(item)|replace('&', '&amp;', 'g') }}"></span></em>
+
+  <script type="text/javascript">
+    var disqus_shortname = 'schmopera';
+    (function () {
+      var s = document.createElement('script'); s.async = true;
+      s.type = 'text/javascript';
+      s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+      (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+  </script>
+
+----------------------------------------------------------------------- #}
+
+{% endspaceless %}{% endblock %}

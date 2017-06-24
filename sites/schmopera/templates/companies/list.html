@@ -1,0 +1,106 @@
+{# ------------------------------------------------------- #}
+{# LIST VIEW OF ALL COMPANIES                              #}
+{# ------------------------------------------------------- #}
+
+{% extends "templates/partials/base.html" %}
+{% block title %}{% parent %} / The Scene / Companies{% endblock %}
+{% block content %}{% spaceless %}
+
+  {% set data = cms.companies %}
+  {% set data = data|sort('name', false) %}
+
+  <h1 class="pill"><a href="{{ url('scene') }}">The Scene</a></h1>
+  <h1 class="pill __sub">Companies</h1>
+
+  <section class="helpers--hero __hidden" id="scene-intro">
+    <h3 class="hero">Hi There!</h3>
+    <p class="hero">We know you love to keep tabs on your favourite companies in the opera game (that's okay, we do too). To help you with that, below are all the companies we have written about on Schmopera!</p>
+    <p class="hero">We work hard to keep this list up to date and with all current information, but sometimes we make mistakes. If you spot something, if your name is on the list and you'd like us to tweak something, or if you have been done a great injustice and your name is <strong>not</strong> on the list, just email us at <a href="mailto:thescene@schmopera.com">thescene@schmopera.com</a> and we'll make it right as rain.</p>
+  </section>
+
+  <section class="scene--search">
+    <a href="#scene-intro" class="pill __small" rel="toggle">What is this?</a>
+    <div>
+      <input type="text" name="filter" placeholder="Click here, and just start typing!" id="param_filter" autocomplete="off" />
+      <button type="button"><i class="icon-search"></i></button>
+    </div>
+
+    <p class="tip">Either search for a company's name, or search for a type of company to get started. Try searching for <em>Opera</em> or <em>Theatre</em>, for example.</p>
+  </section>
+
+  <section>
+    <nav class="scene--list __micro __full">
+      <ul>
+      {% for object in data %}
+        {% set filter = object.name + " " + object.type_of_company %}
+        <li data-filter="{{ filter }}">
+          <a href="{{ url(object) }}">
+            <img src="{{ object.photo|imageCrop(200, 200) }}" alt="Logo">
+            <span>{{ object.name }}</span>
+            {% if object.type_of_company %}
+            <em>{{ object.type_of_company }}</em>
+            {% endif %}
+          </a>
+        </li>
+      {% endfor %}
+      </ul>
+    </nav>
+  </section>
+
+  <script>
+  var companies = [];
+
+  // search filter
+  window.addEventListener('load', function () {
+      var list = document.querySelectorAll('li[data-filter]');
+      Array.prototype.forEach.call(list, function (e, i) {
+          var name = e.attributes['data-filter']
+          companies.push({
+              node: e,
+              name: name.value.toLowerCase() || null
+          });
+      });
+      document.querySelector('input#param_filter').addEventListener('keyup', function (e) {
+          var text = e.target.value.toLowerCase();
+          if (text.length < 1) {
+              companies.map(function (e) {
+                  e.node.style.display = '';
+                  e.node.classList.remove('__active');
+              });
+          } else {
+              companies.map(function (e) {
+                  e.node.style.display = 'none';
+                  e.node.classList.remove('__active');
+                  return e;
+              }).filter(function (e) {
+                  return (e.name.indexOf(text) > -1);
+              }).map(function (e) {
+                  e.node.style.display = '';
+                  e.node.classList.add('__active');
+              });
+          }
+      });
+  });
+
+
+  // fixed search bar
+  window.addEventListener('scroll', function() {
+    var $search = document.querySelector('.scene--search');
+    var $body = document.querySelector('body');
+    var $footer = document.querySelector('.page--footer');
+
+    var content_threshold = $body.offsetHeight - $footer.offsetHeight;
+    var search_offset = offset($search);
+
+    var st = window.pageYOffset;
+
+    if (st > search_offset.top - 40 && st < content_threshold - 340 ) {
+      $search.classList.add('__fixed');
+    } else {
+      $search.classList.remove('__fixed');
+    }
+
+  })
+  </script>
+
+{% endspaceless %}{% endblock %}

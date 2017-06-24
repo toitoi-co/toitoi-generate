@@ -1,0 +1,67 @@
+{# ------------------------------------------------------- #}
+{# ONE OFF VIEW SCENE                                      #}
+{# ------------------------------------------------------- #}
+{% extends "templates/partials/base.html" %}
+
+{% block title %}{% parent %} / {{ cms.scene.name }}{% endblock %}
+{% block content %}
+
+<div class="post--single">
+  <section>
+    <h1 class="pill">{{ cms.scene.name }}</h1>
+    <br style="clear: left">
+    
+    {{ cms.scene.body|markdown }}
+
+  </section>
+
+  {% set data_companies = cms.companies %}
+  {% set data_companies = data_companies|sort('publish_date', true) %}
+  {% set data_companies = data_companies|slice(0,6) %}
+
+  {% set data_people = cms.people %}
+  {% set data_people = data_people|sort('publish_date', true) %}
+  {% set data_people = data_people|slice(0,6) %}
+
+  <section>
+    <h2 class="pill">Recent People</h2>
+    <h2 class="pill ___sub"><a href="{{ url('people') }}">See all</a></h2>
+    <nav class="scene--list __micro __full">
+      <ul>
+      {% for object in data_people %}
+        {% set filter = object.name + " " + object.discipline %}
+        <li data-filter="{{ filter }}">
+          <a href="{{ url(object) }}">
+            <img src="{{ object.headshot|imageCrop(200, 200) }}" alt="Profile Photo">
+            <span>{{ object.name }}</span>
+            {% if object.discipline %}
+            <em>{{ object.discipline }}</em>
+            {% endif %}
+          </a>
+        </li>
+      {% endfor %}
+      </ul>
+    </nav>
+  </section>
+  <section>
+    <h2 class="pill">Recent Companies</h2>
+    <h2 class="pill ___sub"><a href="{{ url('companies') }}">See all</a></h2>
+    <nav class="scene--list __micro __full">
+      <ul>
+      {% for object in data_companies %}
+        {% set filter = object.name + " " + object.type_of_company %}
+        <li data-filter="{{ filter }}">
+          <a href="{{ url(object) }}">
+            <img src="{{ object.photo|imageCrop(200, 200) }}" alt="Logo">
+            <span>{{ object.name }}</span>
+            {% if object.type_of_company %}
+            <em>{{ object.type_of_company }}</em>
+            {% endif %}
+          </a>
+        </li>
+      {% endfor %}
+      </ul>
+    </nav>
+  </section>
+</div>
+{% endblock %}

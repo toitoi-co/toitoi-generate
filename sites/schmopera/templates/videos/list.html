@@ -1,0 +1,65 @@
+{# ------------------------------------------------------- #}
+{# LIST VIEW OF ALL VIDEOS                                 #}
+{# ------------------------------------------------------- #}
+
+{% extends "templates/partials/base.html" %}
+{% block title %}{% parent %} / Videos{% endblock %}
+{% block content %}{% spaceless %}
+
+  {% set data = cms.videos %}
+  {% set data = data|exclude('unlisted', true) %}
+  {% set data = data|sort('publish_date', true) %}
+  {% set data = paginate(data, 10) %}
+
+  <h1 class="pill">Videos</h1>
+
+  <ul class="post--list">
+    {% for object in data %}
+    {% if object.unlisted !== true %}
+    <li>
+      <a href="{{ url(object) }}" class="post--list-title"><h1>{{ object.name }}</h1></a>
+      {% if object.primary_image %}
+      <a href="{{ url(object) }}" class="post--list-image">
+        {% set srcset = object.primary_image|imageCrop(680, 680) + ", " +  object.primary_image|imageCrop(1360, 1360) + " 2x" %}
+        <picture>
+          <source srcset="{{ srcset }}" media="(min-width: 40em)">
+          <img src="{{ object.primary_image|imageCrop(400, 400) }}" alt="{{ object.name }}">
+        </picture>
+        <span class="post--meta">
+          {% if object.publish_date %}
+          <em class="post--meta-date">{{ object.publish_date|date('F d, Y') }}</em>
+          {% endif %}
+          {% if object.authors %}
+          <em class="post--meta-author">{{ object.authors[0].name }}</em>
+          {% endif %}
+          {% if object.youtube_url %}
+            <em class="post--meta-type meta-type_video">Video</em>
+          {% else %}
+            {% if object.category|size !== 0 %}
+            <em class="post--meta-category">{{ object.category.name }}</em>
+            {% endif %}
+          {% endif %}
+        </span>
+        {% if object.youtube_url %}
+          <i class="icon-play"></i>
+        {% endif %}
+      </a>
+      {% endif %}
+
+      {% if object.short_description %}
+      <p class="post--list-desc">{{ object.short_description }}</p>
+      {% endif %}
+
+      {% if object.youtube_url %}
+        <a href="{{ url(object) }}" class="btn post--button">Watch Video</a>
+      {% else %}
+        <a href="{{ url(object) }}" class="btn post--button">Read More</a>
+      {% endif %}
+    </li>
+    {% endif %}
+    {% endfor %}
+  </ul>
+
+  {% include "templates/partials/paginator.html" %}
+
+{% endspaceless %}{% endblock %}

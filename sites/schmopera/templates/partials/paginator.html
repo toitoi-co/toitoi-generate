@@ -1,0 +1,65 @@
+{% spaceless %}
+
+{# ------------------------------------------------------- #}
+{# PARTIAL TEMPLATE: PAGINATOR                             #}
+{# ------------------------------------------------------- #}
+
+{% set curPage = getCurPage() %}
+{% set maxPage = getMaxPage() %}
+
+{% if maxPage > 1 %}
+
+<ul class="paginator">
+  {% if curPage > 1 %}
+  <li class="prev"><a href="{{ getPageUrl(curPage - 1) }}"><i class="icon-arrow-left"></i><span>Newer Posts</span></a></li>
+  {% endif %}
+
+  {% if curPage == 1%}
+  <li class="active"><a href="{{ getPageUrl(1) }}">1</a></li>
+  {% endif %}
+
+  {% if curPage !== 1%}
+  <li><a href="{{ getPageUrl(1) }}">1</a></li>
+  {% endif %}
+
+  {% if curPage > 3 %}
+    <li>...</li>
+  {% endif %}
+
+  {% if curPage > 3 %}
+  <li><a href="{{ getPageUrl(curPage - 2) }}">{{ curPage - 2 }}</a></li>
+  {% endif %}
+  {% if curPage > 2 %}
+  <li><a href="{{ getPageUrl(curPage - 1) }}">{{ curPage - 1 }}</a></li>
+  {% endif %}
+
+  {% if curPage != 1 && curPage != maxPage %}
+  <li class="active"><a href="{{ getPageUrl(curPage) }}">{{ curPage }}</a></li>
+  {% endif %}
+
+  {% if curPage < maxPage - 1 %}
+  <li><a href="{{ getPageUrl(curPage + 1) }}">{{ curPage + 1 }}</a></li>
+  {% endif %}
+  {% if curPage < maxPage - 2 %}
+  <li><a href="{{ getPageUrl(curPage + 2) }}">{{ curPage + 2 }}</a></li>
+  {% endif %}
+
+  {% if curPage < maxPage - 2 %}
+    <li>...</li>
+  {% endif %}
+
+  {% if curPage == maxPage %}
+  <li class="active"><a href="{{ getPageUrl(maxPage) }}">{{maxPage}}</a></li>
+  {% endif %}
+
+  {% if curPage !== maxPage %}
+  <li><a href="{{ getPageUrl(maxPage) }}">{{maxPage}}</a></li>
+  {% endif %}
+
+  {% if curPage < maxPage %}
+  <li class="next"><a href="{{ getPageUrl(curPage + 1) }}"><span>Older Posts</span><i class="icon-arrow-right"></i></a></li>
+  {% endif %}
+</ul>
+
+{% endif %}
+{% endspaceless %}

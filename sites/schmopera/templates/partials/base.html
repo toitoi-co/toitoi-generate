@@ -1,0 +1,80 @@
+<!doctype html>
+<html amp class="no-js" lang="en-CA">
+
+  {% set site_title = getSetting('site_name') -%}
+  {% set site_description = getSetting('site_description') -%}
+  {% set site_url = getSetting('site_url') -%}
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>{% block title %}{{ site_title|default('Schmopera') }}{% endblock %}</title>
+    <meta name="description" content="{% block og_description %}{{ site_description }}{% endblock %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#00a9e0">
+
+    <meta property="og:site_name" content="Schmopera">
+    <meta property="og:title" content="{% block og_title %}Schmopera.com{% endblock %}">
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:url" content="{% block og_url %}{{ site_url }}{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ site_url }}/static/images/logo.png{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{{ site_description }}{% endblock %}">
+
+    <link rel="canonical" href="{% block og_url %}{{ site_url }}{% endblock %}" />
+
+    <link rel="shortcut icon" href="/static/images/favicon.png">
+    <link rel="apple-touch-icon" href="/static/images/touch-icon.png">
+
+    <!-- build:css /static/css/minified.css -->
+    <link rel="stylesheet" href="/static/css/schmopera.css"/>
+    <!-- endbuild -->
+    {% block head_extra -%}{% endblock %}
+  </head>
+  <body {% block body_attributes %}{% endblock %}>
+    <!--[if lt IE 9]>
+        <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+    <![endif]-->
+    {% block body %}
+    {% spaceless %}
+
+      <div id="main" class="container m-scene">
+        {% block header %}
+          {% include "templates/partials/header.html" %}
+        {% endblock %}
+        <div class="content--main">
+          {% block content %}{% endblock %}
+          {% include "templates/partials/newsletter.html" %}
+        </div>
+
+      </div>
+
+      {% block footer %}
+        {% include "templates/partials/footer.html" %}
+      {% endblock %}
+
+    {% endspaceless %}
+
+      <!-- build:js /static/javascript/minified.js -->
+      <script src="/static/javascript/fastclick.js"></script>
+      <script src="/static/javascript/socialight.js"></script>
+      <script src="/static/javascript/lightbox.js"></script>
+      <script src="/static/javascript/main.js"></script>
+      <!-- endbuild -->
+
+      {% block scripts_extra %}{% endblock %}
+      <script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-46647120-1', 'schmopera.com');
+        ga('require', 'displayfeatures');
+        ga('send', 'pageview');
+      </script>
+
+    {% endblock %}
+  </body>
+</html>

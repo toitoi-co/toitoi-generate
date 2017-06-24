@@ -1,0 +1,70 @@
+{# ------------------------------------------------------- #}
+{# ONE OFF VIEW store #}
+{# This page can use any data from http:localhost:2000/cms/#/form/store/ #}
+{# Webhook uses the SWIG.js (like Djagno/Twig) templating system. Their documentation is here: #}
+{# http://paularmstrong.github.io/swig/docs/tags/ #}
+{# Learn about calling data into Webhook pages here: #}
+{# http://www.webhook.com/docs/template-rules-and-filters/ #}
+{# ------------------------------------------------------- #}
+{# Confused what extends and blocks do? Watch a primer: #}
+{# http://www.webhook.com/docs/template-inheritance-blocks/ #}
+{% extends "templates/partials/base.html" %}
+{# This sets our page <title>. It will append this store's name to the site title defined in base.html #}
+{% block title %}{% parent %} - {{ cms.store.name }}{% endblock %}
+{% block content %}
+
+<section class="content--store">
+  <h1 class="pill">Store</h1>
+  <div data-accent_color="999999" data-background_color="222222" data-button_background_color="00a9e0" data-button_text_color="ffffff" data-cart_button_text="Cart" data-cart_title="Your cart" data-cart_total_text="Total" data-checkout_button_text="Checkout" data-discount_notice_text="Shipping and discount codes are added at checkout." data-embed_type="cart" data-empty_cart_text="Your cart is empty." data-shop="schmopera.myshopify.com" data-sticky="true" data-text_color="ffffff"></div>
+  <div data-background_color="222222" data-button_background_color="00a9e0" data-button_text_color="ffffff" data-buy_button_out_of_stock_text="Out of Stock" data-buy_button_product_unavailable_text="Unavailable" data-buy_button_text="Add to cart" data-collection_handle="frontpage" data-display_size="compact" data-embed_type="collection" data-has_image="true" data-next_page_button_text="Next page" data-product_handle="" data-product_modal="true" data-product_name="" data-product_title_color="000000" data-redirect_to="modal" data-shop="schmopera.myshopify.com"></div>
+  <script type="text/javascript">document.getElementById('ShopifyEmbedScript') || document.write('<script type="text/javascript" src="https://widgets.shopifyapps.com/assets/widgets/embed/client.js" id="ShopifyEmbedScript"><\/script>');</script>
+
+  <style>
+   .content--store {
+      min-height: 100vh;
+    }
+  </style>
+</section>
+
+{#
+  <h1>{{ cms.store.name }}</h1>
+  <ul>
+      <li>
+        <strong>Name: </strong>
+        {{ cms.store.name }}
+      </li>
+      <li>
+        <strong>Create Date: </strong>
+        {{ cms.store.create_date|date('F d Y') }}
+      </li>
+      <li>
+        <strong>Last Updated: </strong>
+        {{ cms.store.last_updated|date('F d Y') }}
+      </li>
+      <li>
+        <strong>Page Text: </strong>
+        {{ cms.store.page_text|markdown }}
+      </li>
+      <li>
+        <strong>Products: </strong>
+        <ul>
+        {% for row in cms.store.products %}
+            <li>
+              <strong>Shortcode: </strong>
+              {{ row.shortcode }}
+            </li>
+        {% endfor %}
+        </ul>
+      </li>
+      <li>
+        <strong>Preview URL: </strong>
+        {{ cms.store.preview_url }}
+      </li>
+      <li>
+        <strong>Slug: </strong>
+        {{ cms.store.slug }}
+      </li>
+  </ul>
+
+  #}
+{% endblock %}

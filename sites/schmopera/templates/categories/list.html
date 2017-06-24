@@ -1,0 +1,27 @@
+{# ------------------------------------------------------- #}
+{# LIST VIEW OF ALL CATEGORIES                             #}
+{# ------------------------------------------------------- #}
+
+{% extends "templates/partials/base.html" %}
+
+{% block title %}{% parent %} - categories{% endblock %}
+
+{% block content %}
+
+  {% set data = cms.categories %}
+  {% set data = data|sort('name', false) %}
+
+
+  <h1>Topics</h1>
+
+  {# This forloop can use any data from http:localhost:2000/cms/#/form/categories/ #}
+  <ul class="nav--tags">
+    {% for object in data %}
+      <li><a href="{{ url(object) }}">{{ object.name }}</a></li>
+    {% endfor %}
+  </ul>
+
+  {# The actual pagination template, feel free to edit or replace the default one. #}
+  {% include "templates/partials/paginator.html" %}
+
+{% endblock %}

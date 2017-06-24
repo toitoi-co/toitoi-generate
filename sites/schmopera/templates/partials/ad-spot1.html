@@ -1,0 +1,15 @@
+{% spaceless %}
+
+{# ------------------------------------------------------- #}
+{# PARTIAL TEMPLATE: ADVERTISING SPOT 1                    #}
+{# ------------------------------------------------------- #}
+
+  <a href="http://store.schmopera.com/" title="Visit the Schmopera store" class="ad--spot1">
+    {% set srcset = "/static/images/store-ad.png, /static/images/store-ad@2x.png 2x" %}
+    <picture>
+      <source srcset="{{ srcset }}" media="(min-width: 40em)">
+      <img src="/static/images/store-ad.png" alt="Visit the Schmopera store">
+    </picture>
+  </a>
+
+{% endspaceless %}

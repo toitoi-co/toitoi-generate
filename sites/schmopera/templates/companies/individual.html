@@ -1,0 +1,180 @@
+{# ------------------------------------------------------- #}
+{# INDIVIDUAL VIEW FOR EACH COMPANY                        #}
+{# ------------------------------------------------------- #}
+
+{% extends "templates/partials/base.html" %}
+{% block title %}{% parent %} / The Scene / Companies / {{ item.name }}{% endblock %}
+
+{# meta data #}
+{% block og_title %}{{ item.name }}{% endblock %}
+{% block og_type %}profile{% endblock %}
+{% block og_url %}{% parent %}{{ getCurrentUrl() }}{% endblock %}
+{% block og_image %}{{ item.photo|imageCrop(1360, 1360) }}{% endblock %}
+{% block og_description %}{{ item.biography|striptags|slice(0, 140) }}{% endblock %}
+
+{% block content %}{% spaceless %}
+
+  <article class="scene--single __company">
+    <header class="scene--single_masthead">
+      <h1 class="pill"><a href="{{ url('scene') }}">The Scene</a></h1>
+      <h1 class="pill __sub"><a href="{{ url('companies') }}">Companies</a></h1>
+      <h1 class="pill ___sub">{{ item.name }}</h1>
+    </header>
+
+    <section class="scene--single_hero">
+      <a href="{{ item.photo.url }}" rel="lightbox" data-lightbox="{{ item.photo|imageSize(1360, 1360) }}" title="">
+        <figure>
+          <picture>
+            {% set srcset = item.photo|imageSize(300, 300) + ", " +  item.photo|imageSize(600, 600) + " 2x" %}
+            <source srcset="{{ srcset }}" media="(min-width: 40em)">
+            <img src="{{ item.photo|imageSize(400, 400) }}" alt="{{ item.name }}">
+          </picture>
+          {% if item.photo_credit %}
+          <figcaption>{{ item.photo_credit }}</figcaption>
+          {% endif %}
+        </figure>
+      </a>
+
+      <div class="single--scene_meta">
+        <h3>{{ item.type_of_company }}</h3>
+
+        {% if item.address.street1 %}
+        <address>
+          {# google maps #}
+          {% set full_address = item.address.street1 + " " + item.address.city + " " + item.address.state + " " + item.address.country + " " + item.address.zip %}
+          <a href="http://maps.google.com/?q={{ full_address|url_encode }}">
+            <picture>
+              {% set srcset = "https://maps.googleapis.com/maps/api/staticmap?zoom=15&size=250x250&markers=color:blue|" + full_address|url_encode + ", https://maps.googleapis.com/maps/api/staticmap?zoom=15&scale=2&size=250x250&markers=color:blue|" + full_address|url_encode + " 2x" %}
+              <source srcset="{{ srcset }}" media="(min-width: 40em)">
+              <img src="https://maps.googleapis.com/maps/api/staticmap?zoom=15&size=250x250&markers=color:blue|{{ full_address|url_encode }}" alt="{{ item.name }}">
+            </picture>
+          </a>
+
+          <div>
+            {{ item.address.street1 }}<br/>
+            {% if item.address.street2 %}{{ item.address.street2 }}<br>{% endif %}
+            {{ item.address.city }},&nbsp;{{ item.address.state }}<br>
+            {{ item.address.country }}&nbsp;{{ item.address.zip }}
+          </div>
+        </address>
+        {% endif %}
+
+        {# social media links #}
+        {% if item.social_media|size !== 0 %}
+        <nav class="nav--share">
+          {% if item.website_url %}
+          <a href="{{ item.website_url }}" class="social--web pill" target="_blank"><i class="icon-web"></i>Website</a>
+          {% endif %}
+
+          {% for row in item.social_media %}
+          <a href="{{ row.url }}" class="pill social--{{ row.platform|lower }}" target="_blank"><i class="icon-{{ row.platform|lower }}"></i>{{ row.platform }}</a>
+          {% endfor %}
+        </nav>
+        {% endif %}
+
+        {# more info #}
+        {% if item.more_info|size !== 0 %}
+        <dl class="scene--single_info">
+          {% if item.contact_email %}
+            <dt>
+              Contact Email
+            </dt>
+            <dd>
+              <a href="mailto:{{ item.contact_email }}">{{ item.contact_email }}</a>
+            </dd>
+          {% endif %}
+          {% for row in item.more_info %}
+            <dt>
+              {{ row.item }}
+            </dt>
+            <dd>
+              {{ row.value }}
+            </dd>
+          {% endfor %}
+        </dl>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="scene--single_bio">
+      {{ item.description|markdown }}
+    </section>
+
+  {# Adspot 1 #}
+    <section class="scene--single_adspot">
+{% include "templates/partials/ad-spot1.html" %}
+    </section>
+
+  {# Related Content #}
+    {% if item.related_articles|size !== 0 || item.related_videos|size !== 0 %}
+    {% set relitems = merge(item.related_articles, item.related_videos) %}
+    {% set relitems = relitems|sort('publish_date', true) %}
+    <section class="scene--single_related">
+      <h2 class="pill">Schmopera says...</h2>
+      <ul class="post--list __mini">
+        {% for relation in relitems %}
+        <li>
+          <a href="{{ url(relation) }}" class="post--list-title">
+            {% set srcset = relation.primary_image|imageCrop(100, 100) + ", " +  relation.primary_image|imageCrop(200, 200) + " 2x" %}
+            <picture>
+              <source srcset="{{ srcset }}" media="(min-width: 40em)">
+              <img src="{{ relation.primary_image|imageCrop(100, 100) }}" alt="{{ relation.name }}">
+            </picture>
+
+            <h1>{{ relation.name }}</h1>
+
+            <p class="post--list-desc">{{ relation.short_description }}</p>
+
+            {% if relation.youtube_url %}
+              <span class="btn post--button">Watch Video</span>
+            {% else %}
+              <span class="btn post--button">Read More</span>
+            {% endif %}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+  {# People and Companies - The Scene #}
+    {% if item.related_artists|size !== 0 %}
+    <section class="scene--single_companies">
+      <h2 class="pill">Related People</h2>
+      <nav class="scene--list __micro __full">
+        <ul>
+        {% for relation in item.related_artists %}
+          <li><a href="{{ url(relation) }}"><img src="{{ relation.headshot|imageCrop(200, 200) }}" alt="Headshot"><span>{{ relation.name }}</span></a></li>
+        {% endfor %}
+        </ul>
+      </nav>
+    </section>
+    {% endif %}
+
+  {# Thumbnail gallery #}
+    {% if item.gallery|size !== 0 %}
+    <section class="post--single_gallery">
+      <h2 class="pill">Gallery</h2>
+
+      <ul class="gallery">
+      {% for image in item.gallery %}
+        <li>
+          {# You can get the raw image url by accessing image.url #}
+          <a href="{{ image.url }}" data-lightbox="{{ image|imageSize(1360, 1360) }}" rel="lightbox" title="{{ image.caption }}">
+            <img src="{{ image|imageCrop(200, 200) }}" alt="{{ image.caption }}">
+          </a>
+        </li>
+      {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() { initGallery(); });
+    </script>
+  </article>
+
+
+
+{% endspaceless %}
+{% endblock %}

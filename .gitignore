@@ -19,5 +19,5 @@ node_modules
 /.firebase.conf
 /config.json
 /config.json.source
-/sites/
+/sites/*/.build
 /2015-07-17-1437158370-7415732-nycopera1.jpg

@@ -1,0 +1,23 @@
+{# ------------------------------------------------------- #}
+{# INDIVIDUAL VIEW FOR EACH ARTICLE                        #}
+{# ------------------------------------------------------- #}
+
+{% extends "templates/partials/base.html" %}
+{% block title %}{{ item.name }}{% endblock %}
+
+{# meta data #}
+{% block og_title %}{{ item.name }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_url %}{% parent %}{{ url(item) }}{% endblock %}
+{% block og_image %}{{ item.primary_image|imageCrop(1360, 1360) }}{% endblock %}
+{% block og_description %}{{ item.short_description }}{% endblock %}
+
+{% block content %}{% spaceless %}
+
+  <h1 class="pill"><a href="{{ url('about') }}">About</a></h1>
+  <h1 class="pill __sub">{{ item.name }}</h1>
+
+  <article class="post--single_body">
+    {{ item.body|markdown }}
+  </article>
+{% endspaceless %}{% endblock %}

@@ -1,0 +1,47 @@
+{% spaceless %}
+
+{# ------------------------------------------------------- #}
+{# PARTIAL TEMPLATE: HEADER                                #}
+{# ------------------------------------------------------- #}
+
+<header class="page--header">
+  <a href="/"  class="site-branding" title="Back to home page"><h1>{% block title %}{{ site_title|default('Webhook site') }}{% endblock %}</h1></a>
+
+  <nav class="nav--jump">
+    <a href="#nav-primary" class="nav--icon nav--primary-toggle" target=_self title="Primary Navigation"><i class="icon-menu"></i><i class="icon-cancel"></i></a>
+  </nav>
+
+  <nav class="nav--sections" id="nav--sections">
+    <ul>
+      <li><h4><a href="/">The Blog</a></h4></li>
+      <li><a href="{{ url('articles') }}">Articles</a></li>
+      <li><a href="{{ url('videos') }}">Videos</a></li>
+      <!-- <li><a href="/about/contribute/">Contribute</a></li> -->
+    </ul>
+    <ul>
+      <li><h4><a href="{{ url('scene') }}">The Scene</a></h4></li>
+      <li><a href="{{ url('companies') }}">Companies</a></li>
+      <li><a href="{{ url('people') }}">People</a></li>
+    </ul>
+    <ul>
+      <li><h4><a href="http://store.schmopera.com/">The Store</a></h4></li>
+      <li><a href="http://store.schmopera.com/collections/hoodies">Hoodies</a></li>
+      <li><a href="http://store.schmopera.com/collections/t-shirts">T-Shirts</a></li>
+    </ul>
+  </nav>
+
+{#
+  <section class="adspot">
+    <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <ins class="adsbygoogle"
+         style="display:inline-block;width:200px;height:80px"
+         data-ad-client="ca-pub-1484254101105110"
+         data-ad-slot="3045884185"></ins>
+    <script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  </section>
+#}
+</header>
+
+{% endspaceless %}

@@ -1,0 +1,60 @@
+{# ------------------------------------------------------- #}
+{# LIST VIEW FOR ALL AUTHORS                               #}
+{# ------------------------------------------------------- #}
+
+{% extends "templates/partials/base.html" %}
+{% block title %}{% parent %} / Authors{% endblock %}
+{% block content %}{% spaceless %}
+
+  {% set data = cms.authors %}
+  {% set data = data|sort('name') %}
+
+  {# set data = paginate(data, 5) #}
+
+  <h1 class="pill">Authors</h1>
+
+  <!-- <div class="disclaimer">
+    <h2>Warning</h2>
+    <p>This section is still a work in progress. We're working super hard to get the new site shiny and spiffy, and appreciate your patience in the meantime.</p>
+    <p>Unfortunately, that means that this particular page is not working yet, check back soon!</p>
+  </div> -->
+
+
+  <!-- <h1>List of authors</h1> -->
+
+  <ul class="author--list">
+    {% for object in data %}
+
+    {% set articles = merge(object.related_articles, object.related_videos) %}
+
+      {% if articles|size > 0 %}
+        <li>
+          <a href="{{ url(object) }}">
+            {% set srcset = object.photo|imageCrop(200, 200) + ", " +  object.photo|imageCrop(400, 400) + " 2x" %}
+            <picture>
+              <source srcset="{{ srcset }}" media="(min-width: 40em)">
+              <img src="{{ object.photo|imageCrop(200, 200) }}" alt="{{ object.name }}">
+            </picture>
+
+            <span class="author--list_item-name">
+            {{ object.name }}
+            </span>
+
+            <span class="author--list_item-articles">
+            {% if articles|size > 1 %}
+              {{ articles|size }}&nbsp;posts
+            {% else %}
+              {{ articles|size }}&nbsp;post
+            {% endif %}
+            </span>
+          </a>
+        </li>
+
+      {% endif %}
+    {% endfor %}
+  </ul>
+
+  {# The actual pagination template, feel free to edit or replace the default one. #}
+  {# include "templates/partials/paginator.html" #}
+
+{% endspaceless %}{% endblock %}

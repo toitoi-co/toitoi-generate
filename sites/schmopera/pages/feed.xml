@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+{# ------------------------------------------------------- #}
+{# FEED.XML                                             #}
+{# ------------------------------------------------------- #}
+
+{% set data = merge(cms.articles, cms.videos) %}
+{% set data = data|exclude('unlisted_home', true) %}
+{% set data = data|exclude('unlisted', true) %}
+{% set data = data|sort('publish_date', true) %}
+
+{% set now = Date() %}
+{% set current_date = now|date('c')%}
+
+<rss version="2.0">
+  <channel>
+    <title>{{ getSetting('site_name') }}</title>
+    <link>{{ getSetting('site_url') }}</link>
+    <image>
+       <title>Schmopera Logo</title>
+       <url>{{ getSetting('site_url') }}/static/images/logo-rss.png</url>
+       <width>144</width>
+       <height>144</height>
+    </image>
+    <description>{{ getSetting('site_description') }}</description>
+      {# Limit the RSS to 10 entries, and sort by most recently published. #}
+      {% for item in data|sort('publish_date', true)|slice(0,10) %}
+      <item>
+        <title>{{ item.name }}</title>
+        {# Web need Webhook to build a FULL url, not a relative one. #}
+        <link>{{ getSetting('site_url') }}{{ url(item) }}</link>
+        <description>
+          {# The escape filter escapes our HTML so readers can read it. #}
+          <![CDATA[
+               <img src="{{ item.primary_image|imageCrop(1024, 1024) }}"
+               height="1024"
+               width="1024" /> ]]>
+          {{ item.short_description|safe|escape }}
+        </description>
+        <pubDate>{{ item.publish_date }}</pubDate>
+      </item>
+      {% endfor %}
+  </channel>
+</rss>

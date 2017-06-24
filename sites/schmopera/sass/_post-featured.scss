@@ -1,0 +1,152 @@
+/*
+
+  POST FEATURED
+
+*/
+
+/* -----------------------------------------------------
+    post--featured
+    featured posts list
+----------------------------------------------------- */
+.post--featured {
+  position: relative;
+  overflow: hidden;
+
+  margin: 0 0 40px 0;
+
+  font-size: .85em;
+
+  h2 {
+  }
+
+  @include bp-medium {
+    margin: 0 0 60px 0;
+  }
+
+  @include bp-large {
+    margin: 0 0 80px 0;
+  }
+
+  .nav--share {
+    float: right;
+
+    h3 {
+      margin: 0;
+      float: left;
+      line-height: 40px;
+      padding-right: 1em;
+      font-size: .8em;
+    }
+
+    a {
+      width: 40px;
+      text-align: center;
+      padding: 0;
+
+      i {
+        padding: 0;
+        font-size: 1.1em;
+
+        &:before {
+          margin: 0;
+        }
+      }
+    }
+
+    @include bp-micro {
+      h3 {
+        display: none;
+      }
+    }
+  }
+}
+
+
+.post--featured_item {
+  display: block;
+
+  position: relative;
+  z-index: 1;
+
+  float: left;
+  width: 50%;
+
+  position: relative;
+  height: 0;
+  padding-top: 50%;
+  overflow: hidden;
+
+  &:first-of-type {
+    clear: left;
+    float: none;
+    width: 100%;
+    padding-top: 50%;
+  }
+
+  picture, img {
+    display: block;
+    z-index: 1;
+  }
+
+  img {
+    position: absolute;
+    width: 100%;
+    top: 0;
+  }
+
+  h3 {
+    margin: 0;
+    position: absolute;
+    bottom: 2.25em;
+    left: 5px;
+    z-index: 5;
+
+    max-width: 80%;
+
+    span {
+      position: relative;
+      background: #fff;
+      color: $sch-black;
+      padding: .08em 0;
+      line-height: 1.1em;
+      box-shadow: 5px 0 0 #fff, -5px 0 0 #fff;
+    }
+
+    @include bp-large {
+      span {
+        font-size: 1.2em;
+      }
+
+      max-width: 65%;
+    }
+  }
+
+  .post--meta {
+    top: auto;
+    bottom: 0;
+    z-index: 5;
+    font-size: .9em;
+
+    .post--meta_date {
+
+    }
+  }
+
+  &:after {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    box-shadow: rgba(0, 0, 0, 0.8) 0 0 100px inset;
+  }
+
+  &:hover:after {
+    box-shadow: none;
+    background: $sch-blue;
+    opacity: .8;
+  }
+}

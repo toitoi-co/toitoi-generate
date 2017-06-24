@@ -1,0 +1,111 @@
+{# ------------------------------------------------------- #}
+{# INDIVIDUAL VIEW FOR EACH CATEGORY                       #}
+{# ------------------------------------------------------- #}
+
+{% extends "templates/partials/base.html" %}
+{% block title %}{% parent %} / Topics / {{ item.name }}{% endblock %}
+
+{% block content %}{% spaceless %}
+
+  <h1 class="pill">Category</h1>
+  <h1 class="pill __sub">{{ item.name }}</h1>
+
+<!-- {{ item.markdown_text|markdown }} -->
+
+  {% set editorial = merge(item.videos_category, item.articles_category) %}
+  {% set editorial = editorial|sort('publish_date', true) %}
+  {% set editorial = paginate(editorial, 10) %}
+
+  <ul class="post--list">
+    {% for relation in editorial %}
+    {% if relation.unlisted !== true %}
+    <li>
+      <a href="{{ url(relation) }}" class="post--list-title"><h1>{{ relation.name }}</h1></a>
+      {% if relation.primary_image %}
+      <a href="{{ url(relation) }}" class="post--list-image">
+        {% set srcset = relation.primary_image|imageCrop(680, 680) + ", " +  relation.primary_image|imageCrop(1360, 1360) + " 2x" %}
+        <picture>
+          <source srcset="{{ srcset }}" media="(min-width: 40em)">
+          <img src="{{ relation.primary_image|imageCrop(400, 400) }}" alt="{{ relation.name }}">
+        </picture>
+        <span class="post--meta">
+          {% if relation.publish_date %}
+          <em class="post--meta-date">{{ relation.publish_date|date('F d, Y') }}</em>
+          {% endif %}
+          {% if relation.authors %}
+          <em class="post--meta-author">{{ relation.authors[0].name }}</em>
+          {% endif %}
+          {% if relation.youtube_url %}
+            <em class="post--meta-type meta-type_video">Video</em>
+          {% else %}
+            {% if relation.category|size !== 0 %}
+            <em class="post--meta-category">{{ relation.category.name }}</em>
+            {% endif %}
+          {% endif %}
+        </span>
+        {% if relation.youtube_url %}
+          <i class="icon-play"></i>
+        {% endif %}
+      </a>
+      {% endif %}
+
+      {% if relation.short_description %}
+      <p class="post--list-desc">{{ relation.short_description }}</p>
+      {% endif %}
+
+      {% if relation.youtube_url %}
+        <a href="{{ url(relation) }}" class="btn post--button">Watch Video</a>
+      {% else %}
+        <a href="{{ url(relation) }}" class="btn post--button">Read More</a>
+      {% endif %}
+    </li>
+    {% endif %}
+    {% endfor %}
+  </ul>
+
+  {% include "templates/partials/paginator.html" %}
+
+<!--
+  <h1>{{ item.name }}</h1>
+  <ul>
+      <li>
+        <strong>Name: </strong>
+        {{ item.name }}
+      </li>
+      <li>
+        <strong>Create Date: </strong>
+        {# Format the date. You can use PHP's date function to format as needed. http://php.net/manual/en/function.date.php #}
+        {{ item.create_date|date('F d Y') }}
+      </li>
+      <li>
+        <strong>Last Updated: </strong>
+        {# Format the date. You can use PHP's date function to format as needed. http://php.net/manual/en/function.date.php #}
+        {{ item.last_updated|date('F d Y') }}
+      </li>
+      <li>
+        <strong>Publish Date: </strong>
+        {# Format the date. You can use PHP's date function to format as needed. http://php.net/manual/en/function.date.php #}
+        {{ item.publish_date|date('F d Y') }}
+      </li>
+      <li>
+        <strong>Preview URL: </strong>
+        {{ item.preview_url }}
+      </li>
+      <li>
+        <strong>Slug: </strong>
+        {{ item.slug }}
+      </li>
+      <li>
+        <strong>Articles (Category): </strong>
+        {# Relationship. Note that use the label you set for the relation, not the content-type name. #}
+        {% for relation in item.articles_category %}
+          {# You can ouput more than just the name. Feel free to output more fields from the CMS. #}
+          <a href="{{ url(relation) }}">{{ relation.name }}</a>{% if not loop.last %},{% endif %}
+        {% endfor %}
+      </li>
+      <li>
+        <strong>Videos (Category): </strong>
+        {# Relationship. Note that use the label you set for the relation, not the content-type name. #}
+  </ul>
+-->
+{% endspaceless %}{% endblock %}
