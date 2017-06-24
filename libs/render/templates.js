@@ -4,11 +4,15 @@ var path = require("path");
 var defaultValue = require("default-value");
 var dotty = require("dotty");
 var globAsync = Promise.promisify(require("glob"));
+const promiseTaskQueue = require("promise-task-queue");
 
 var createSlugGenerator = require("../util/generate-slug");
 var createItemSlugGenerator = require("../util/get-item-slug");
 var isPublished = require("../util/is-published");
 var getTemplateOverrideField = require("../util/get-template-override-field");
+
+// FIXME: Make the below a proper configuration option...
+let alwaysRenderPreviews = false; // Set to `true` to render previews even for published articles
 
 module.exports = function(options) {
   var env = options.environment;
@@ -67,29 +71,19 @@ module.exports = function(options) {
           item.value._id = item.key;
         });
 
-        var categoryUrlSegments, itemUrlSegments;
-
-        if (dotty.exists(typeInfo, "customUrls.listUrl")) {
-          if (typeInfo.customUrls.listUrl === "#") {
-            categoryUrlSegments = [ itemType ];
-            itemUrlSegments = [];
-          } else {
-            categoryUrlSegments = [ typeInfo.customUrls.listUrl ];
-            itemUrlSegments = [ typeInfo.customUrls.listUrl ];
-          }
-        } else {
-          categoryUrlSegments = [ itemType ];
-          /* FIXME: The following is temporarily disabled to fix mis-generation
-           *        of paths and URLs. For now, the item type exists within the
-           *        item slug. The proper fix would have to actually remove the
-           *        item type from there if # is specified as the `listUrl`.
-          itemUrlSegments = [ itemType ];
-          */
-
-          itemUrlSegments = [ ];
-        }
-
         if (parsedPath.basename === "list") {
+          var categoryUrlSegments;
+
+          if (dotty.exists(typeInfo, "customUrls.listUrl")) {
+            if (typeInfo.customUrls.listUrl === "#") {
+              categoryUrlSegments = [ itemType ];
+            } else {
+              categoryUrlSegments = [ typeInfo.customUrls.listUrl ];
+            }
+          } else {
+            categoryUrlSegments = [ itemType ];
+          }
+
           var url = categoryUrlSegments.join("/");
 
           return writeTemplate(templatePath, env.buildDirectoryPath(url), "/" + url, options.prepareLocals({}));
@@ -105,22 +99,25 @@ module.exports = function(options) {
               itemTemplatePath = templatePath;
             }
 
-            var publishedRender;
+            var publishedRender, previewRender;
 
             if (isPublished(item.value)) {
-              var itemSlug = getItemSlug(item.value);
-              var publishedUrl = itemUrlSegments.concat([itemSlug]).join("/");
+              var publishedUrl = getItemSlug(item.value, typeInfo);
 
               publishedRender = writeTemplate(itemTemplatePath, env.buildDirectoryPath(publishedUrl), "/" + publishedUrl, options.prepareLocals({item: item.value}));
             }
 
-            var previewUrl = urlJoin("_wh_previews", item.value.preview_url);
+            if (alwaysRenderPreviews || !isPublished(item.value)) {
+              var previewUrl = urlJoin("_wh_previews", item.value.preview_url);
+
+              previewRender = writeTemplate(itemTemplatePath, env.buildDirectoryPath(previewUrl), "/" + previewUrl, options.prepareLocals({item: item.value}), {
+                noIndex: true
+              });
+            }
 
             return Promise.all([
               publishedRender,
-              writeTemplate(itemTemplatePath, env.buildDirectoryPath(previewUrl), "/" + previewUrl, options.prepareLocals({item: item.value}), {
-                noIndex: true
-              })
+              previewRender
             ]);
           });
         } else {
@@ -132,9 +129,9 @@ module.exports = function(options) {
                *                             ^ 0        ^ 1  ^ 2    ^ 3 (-1)
                * Result: ["more", "images"]
                */
-              var itemSlug = getItemSlug(item.value);
+              var publishedUrl = getItemSlug(item.value, typeInfo);
               var subPagePathSegments = actualPathSegments.slice(1, -1).concat([parsedPath.basename]);
-              var url = itemUrlSegments.concat([itemSlug]).concat(subPagePathSegments).join("/");
+              var url = [publishedUrl].concat(subPagePathSegments).join("/");
 
               // FIXME: Sub-pages are not rendered for previews? It was like this in the original code...
               return writeTemplate(templatePath, env.buildDirectoryPath(url), "/" + url, options.prepareLocals({item: item.value}));

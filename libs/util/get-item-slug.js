@@ -3,28 +3,30 @@ var formatCustomUrl = require('./format-custom-url');
 
 module.exports = function(slugGenerator) {
   return function getItemSlug(item, typeInfo) {
-    var itemSlug, completeSlug;
-    
     if (item.slug != null) {
-      itemSlug = item.slug;
-    } else if (item._type != null) {
-      itemSlug = item._type + "/" + slugGenerator(item);
+      return item.slug;
     } else {
-      // FIXME: This is probably an error/bug?
-      itemSlug = slugGenerator(item);
+      var slug;
+
+      if (dotty.exists(typeInfo, "customUrls.individualUrl")) {
+        slug = formatCustomUrl(typeInfo.customUrls.individualUrl, item) + "/" + slugGenerator(item);
+      } else if (dotty.exists(typeInfo, "customUrls.listUrl")) {
+        slug = formatCustomUrl(typeInfo.customUrls.listUrl, item) + "/" + slugGenerator(item);
+      } else {
+        if (item._type != null) {
+          slug = item._type + "/" + slugGenerator(item);
+        } else {
+          // FIXME: This is probably an error/bug?
+          slug = slugGenerator(item);
+        }
+      }
+
+      if (item.slug == null) {
+        // FIXME: Mutation, this stinks... but is necessary for now.
+        item.slug = slug;
+      }
+
+      return slug;
     }
-    
-    if (dotty.exists(typeInfo, "customUrls.individualUrl")) {
-      completeSlug = formatCustomUrl(typeInfo.customUrls.individualUrl, item) + "/" + itemSlug;
-    } else {
-      completeSlug = itemSlug;
-    }
-    
-    if (item.slug == null) {
-      // FIXME: Mutation, this stinks... but is necessary for now.
-      item.slug = completeSlug;
-    }
-    
-    return completeSlug;
   }
 }

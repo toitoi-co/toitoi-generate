@@ -10,7 +10,7 @@ function apiPath(path) {
 }
 
 Promise.try(function() {
-  return bhttp.put(apiPath("/images/demo.toitoi.co/opera2.jpg"), fs.createReadStream("./2015-07-17-1437158370-7415732-nycopera1.jpg"), {
+  return bhttp.put(apiPath("/images/demo.toitoi.co/opera2.jpg"), fs.createReadStream("../2015-07-17-1437158370-7415732-nycopera1.jpg"), {
     headers: {
       "x-token": process.argv[2]
     }

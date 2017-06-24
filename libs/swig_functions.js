@@ -2,6 +2,7 @@
 
 var utils = require('./utils.js');
 var _ = require('lodash');
+const urlJoin = require("url-join");
 
 var slugger = require('uslug');
 
@@ -33,7 +34,7 @@ module.exports.swigFunctions = function(options) {
 
       object = _.find(types, function(type){ return type.name.toLowerCase() == object.toLowerCase() || type.id.toLowerCase() == object.toLowerCase() });
     }
-  
+
     if(!object) {
       return '';
     }
@@ -132,7 +133,7 @@ module.exports.swigFunctions = function(options) {
       type = parts[0];
       key = parts[1];
     }
-    
+
     if(!self.typeInfo[type]) {
       return {};
     }
@@ -387,11 +388,11 @@ module.exports.swigFunctions = function(options) {
 
       var no = 1;
       // convert it into an array
-      tempData = _.map(tempData, function(value, key) { 
+      tempData = _.map(tempData, function(value, key) {
         var tmpSlug = "";
 
-        value._id = key; 
-        value._type = name; 
+        value._id = key;
+        value._type = name;
 
         if(value.name)  {
           if(!value.slug) {
@@ -420,7 +421,7 @@ module.exports.swigFunctions = function(options) {
 
         return value;
       });
-      tempData = _.filter(tempData, function(item) { 
+      tempData = _.filter(tempData, function(item) {
         if(!includeAll && !item.publish_date) {
           return false;
         }
@@ -438,7 +439,7 @@ module.exports.swigFunctions = function(options) {
       data = data.concat(tempData);
     });
 
-    
+
     self.cachedData[names.join(',') + ',' + includeAll] = data;
 
     return data;
@@ -476,7 +477,7 @@ module.exports.swigFunctions = function(options) {
       return self.paginationBaseUrl;
     }
 
-    return self.paginationBaseUrl + self.pageUrl + pageNum + '/';
+    return urlJoin(self.paginationBaseUrl, self.pageUrl + pageNum);
   };
 
   var getCurrentUrl = function() {
@@ -516,7 +517,7 @@ module.exports.swigFunctions = function(options) {
     if(reverse) {
       return _.sortBy(input, property).reverse();
     }
-    
+
     return _.sortBy(input, property)
   };
 
@@ -596,7 +597,7 @@ module.exports.swigFunctions = function(options) {
   this.increasePage = function() {
     self.curPage = self.curPage + 1;
   };
-  
+
   this.setParams = function(params) {
     for(var key in params) {
       self[key] = params[key];

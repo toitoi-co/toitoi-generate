@@ -1,6 +1,10 @@
 module.exports = function(env, swigInstance) {
   return function tryRender(template, locals, options) {
-    env.logger.ok('Rendering ' + template);
+    env.logger.debug('Rendering ' + template);
+
+    // FIXME: Proper detection of item type...
+    let localTemplate = template.match(/sites\/[^\/]+\/.+$/);
+    env.logger.ok(`Rendering ${localTemplate}: ${(locals.item || {}).name}`)
 
     var renderedOutput;
 

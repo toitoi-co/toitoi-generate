@@ -394,7 +394,12 @@ module.exports = function createEnvironment(environmentOptions) {
             } else {
               return Promise.try(function() {
                 logger.ok("Starting deployment...");
-                return deploy();
+
+                if (task.deploymentStep == null) {
+                  return deploy();
+                } else {
+                  return task.deploymentStep(task);
+                }
               }).tap(function() {
                 logger.ok("Deployment completed!");
               });
@@ -413,9 +418,11 @@ module.exports = function createEnvironment(environmentOptions) {
       installRemotePreset: installRemotePreset,
       installLocalPreset: installLocalPreset,
       path: environmentPath,
-      queue: queue,
       bucketRef: bucketReference.bind(null, environmentOptions.siteName, environmentOptions.secretKey), // FIXME: bind?
-      secretKey: environmentOptions.secretKey
+      secretKey: environmentOptions.secretKey,
+      queueBuild: function queueBuild(options) {
+          return queue.push("build", options);
+      }
     }
   });
 }
